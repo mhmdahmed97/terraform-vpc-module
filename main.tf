@@ -29,29 +29,29 @@ resource "aws_subnet" "public_subnet" {
 }
 
 # Create route tables for public subnets
-resource "aws_route_table" "public" {
-  count  = length(aws_subnet.public)
-  vpc_id = aws_vpc.main.id
-  tags   = merge(var.tags, { Name = "public-${count.index + 1}" })
+resource "aws_route_table" "public_route_table" {
+  count  = length(aws_subnet.public_subnet)
+  vpc_id = aws_vpc.my_vpc.id
+  tags   = merge(var.tags, { Name = "public-route-table-${count.index + 1}" })
 }
 
 # Create a default route in the public route tables through the Internet Gateway
-resource "aws_route" "public" {
-  count               = length(aws_subnet.public)
-  route_table_id      = aws_route_table.public[count.index].id
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id          = aws_internet_gateway.main.id
+resource "aws_route" "public_default_route" {
+  count               = length(aws_subnet.public_subnet)
+  route_table_id      = aws_route_table.public_route_table[count.index].id
+  destination_cidr_block = var.public_route_destination
+  gateway_id          = aws_internet_gateway.my_igw.id
 }
 
 # Associate public subnets with the route table
-resource "aws_route_table_association" "public" {
-  count          = length(aws_subnet.public)
-  subnet_id      = aws_subnet.public[count.index].id
-  route_table_id = aws_route_table.public[count.index].id
+resource "aws_route_table_association" "public_route_table_association" {
+  count          = length(aws_subnet.public_subnet)
+  subnet_id      = aws_subnet.public_subnet[count.index].id
+  route_table_id = aws_route_table.public_route_table[count.index].id
 }
 
 # Create private subnets
-resource "aws_subnet" "private" {
+resource "aws_subnet" "private_subnet" {
   count             = length(var.private_subnet_cidr_blocks)
   cidr_block        = var.private_subnet_cidr_blocks[count.index]
   vpc_id            = aws_vpc.main.id
