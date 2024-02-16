@@ -25,7 +25,7 @@ resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.main.id
   availability_zone = element(var.availability_zones, count.index)
   map_public_ip_on_launch = var.map_public_ip_on_launch
-  tags = merge(var.tags, { Name = "public-${count.index + 1}" })
+  tags = merge(var.tags, { Name = "public-subnet-${count.index + 1}" })
 }
 
 # Create route tables for public subnets
@@ -55,42 +55,42 @@ resource "aws_subnet" "private_subnet" {
   count             = length(var.private_subnet_cidr_blocks)
   cidr_block        = var.private_subnet_cidr_blocks[count.index]
   vpc_id            = aws_vpc.main.id
-  availability_zone       = element(["us-east-1a", "us-east-1b", "us-east-1c"], count.index)
-  tags = merge(var.tags, { Name = "private-${count.index  + 1}" })
+  availability_zone       = element(var.availability_zones, count.index)
+  tags = merge(var.tags, { Name = "private-subnet-${count.index  + 1}" })
 }
 
 # Create a NAT Gateway for each private subnet
-resource "aws_nat_gateway" "nat" {
+resource "aws_nat_gateway" "nat_gateway" {
   count         = length(aws_subnet.private)
   allocation_id = aws_eip.nat[count.index].id
-  subnet_id     = aws_subnet.private[count.index].id
+  subnet_id     = aws_subnet.private_subnet[count.index].id
   tags = var.tags
 }
 
 # Create Elastic IPs for NAT Gateways
 resource "aws_eip" "nat" {
-  count = length(aws_subnet.private)
+  count = length(aws_subnet.private_subnet)
   tags = var.tags
 }
 
 # Create a route table for private subnets
-resource "aws_route_table" "private" {
-  count  = length(aws_subnet.private)
-  vpc_id = aws_vpc.main.id
-  tags   = merge(var.tags, { Name = "private-${count.index + 1}" })
+resource "aws_route_table" "private_route_table" {
+  count  = length(aws_subnet.private_subnet)
+  vpc_id = aws_vpc.my_vpc.id
+  tags   = merge(var.tags, { Name = "private-route-table-${count.index + 1}" })
 }
 
 # Associate private subnets with the route table
-resource "aws_route_table_association" "private" {
-  count          = length(aws_subnet.private)
-  subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private[count.index].id
+resource "aws_route_table_association" "private_route_table_association" {
+  count          = length(aws_subnet.private_subnet)
+  subnet_id      = aws_subnet.private_subnet[count.index].id
+  route_table_id = aws_route_table.private_route_table[count.index].id
 }
 
 # Create a default route in the private route table through the NAT Gateway
-resource "aws_route" "private" {
-  count               = length(aws_subnet.private)
-  route_table_id      = aws_route_table.private[count.index].id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id      = aws_nat_gateway.nat[count.index].id
+resource "aws_route" "private_default_route" {
+  count               = length(aws_subnet.private_subnet)
+  route_table_id      = aws_route_table.private_route_table[count.index].id
+  destination_cidr_block = var.public_route_destination
+  nat_gateway_id      = aws_nat_gateway.nat_gateway[count.index].id
 }

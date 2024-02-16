@@ -50,6 +50,12 @@ variable "public_route_destination" {
   default     = "0.0.0.0/0"
 }
 
+variable "private_route_destination" {
+  description = "(Optional) Can be provided in case a specific route is needed"
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
 variable "private_subnet_cidr_blocks" {
   description = "(Optional) List of CIDR blocks for private subnets"
   type        = list(string)
