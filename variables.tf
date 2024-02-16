@@ -32,6 +32,19 @@ variable "public_subnet_cidr_blocks" {
   type        = list(string)
 }
 
+variable "availability_zones" {
+  type    = list(string)
+  default = ["us-east-1a", "us-east-1b", "us-east-1c"]
+}
+
+variable "map_public_ip_on_launch" {
+  description = "Controls if EC2 instances launched into this subnet should have a public IP addr by default"
+  type        = bool
+  default     = true
+}
+
+
+
 variable "private_subnet_cidr_blocks" {
   description = "List of CIDR blocks for private subnets"
   type        = list(string)

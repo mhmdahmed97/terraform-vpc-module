@@ -19,12 +19,12 @@ resource "aws_internet_gateway" "my_igw" {
 }
 
 # Create public subnets
-resource "aws_subnet" "public" {
+resource "aws_subnet" "public_subnet" {
   count                   = length(var.public_subnet_cidr_blocks)
   cidr_block              = var.public_subnet_cidr_blocks[count.index]
   vpc_id                  = aws_vpc.main.id
-  availability_zone       = element(["us-east-1a", "us-east-1b", "us-east-1c"], count.index)
-  map_public_ip_on_launch = true
+  availability_zone = element(var.availability_zones, count.index)
+  map_public_ip_on_launch = var.map_public_ip_on_launch
   tags = merge(var.tags, { Name = "public-${count.index + 1}" })
 }
 
